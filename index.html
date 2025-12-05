@@ -16,13 +16,6 @@
             text-align: center;
         }
 
-        /* --- LOGO STYLE --- */
-        .logo {
-            max-width: 300px; 
-            margin-bottom: 30px;
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
-        }
-
         h1 {
             color: #e94560;
             font-size: 2.5rem;
@@ -44,4 +37,63 @@
             text-decoration: none;
             background: #16213e;
             border: 4px solid #0f3460;
-            border-radius: 2
+            border-radius: 20px;
+            transition: all 0.3s;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .menu-btn:hover {
+            transform: translateY(-5px);
+            border-color: #e94560;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .btn-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #ffd700;
+        }
+
+        .btn-desc {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        footer {
+            margin-top: 50px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CHOOSE YOUR VERSION</h1>
+
+    <div class="button-container">
+        <a href="chromebook.html" class="menu-btn">
+            <span class="btn-icon">💻</span>
+            <span class="btn-title">Chromebook</span>
+            <span class="btn-desc">Best for individual students on laptops.</span>
+        </a>
+
+        <a href="projector.html" class="menu-btn">
+            <span class="btn-icon">📽️</span>
+            <span class="btn-title">Projector</span>
+            <span class="btn-desc">Includes zoom tools for big screens.</span>
+        </a>
+    </div>
+
+    <footer>© 2025 Paper & Pixels</footer>
+
+</body>
+</html>
