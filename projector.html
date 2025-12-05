@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Write Idea Generator</title>
+    <style>
+        body {
+            font-family: 'Verdana', sans-serif;
+            text-align: center;
+            background-color: #1a1a2e;
+            background-image: radial-gradient(circle at center, #2b2b40 0%, #0f0f1a 100%);
+            margin: 0;
+            padding: 0;
+            color: white;
+            height: 100vh;
+            width: 100vw;
+            /* CHANGE 1: ALLOW SCROLLING IF NEEDED */
+            overflow-y: auto; 
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* --- ZOOM CONTROL (New Feature) --- */
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 200;
+            font-size: 12px;
+            border: 1px solid #555;
+        }
+        
+        .zoom-slider {
+            width: 100px;
+            cursor: pointer;
+        }
+
+        /* --- UI CONTROLS --- */
+        #soundToggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 30px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+            z-index: 100;
+            background: rgba(255,255,255,0.1);
+            padding: 5px;
+            border-radius: 50%;
+        }
+        #soundToggle:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+
+        /* TIMER */
+        .timer-container {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        .timer-display {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 20px;
+            color: #00ff00;
+            font-weight: bold;
+            text-shadow: 0 0 5px #00ff00;
+            background: #111;
+            padding: 5px;
+            border-radius: 5px;
+            width: 70px;
+            text-align: center;
+        }
+
+        .timer-input {
+            width: 60px;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .timer-btn {
+            background: #00cec9;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .timer-btn:hover { background: #0984e3; }
+
+        /* --- SCALABLE WRAPPER --- */
+        /* This wrapper holds everything that needs to shrink */
+        #app-scaler {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            transform-origin: top center; /* Zooms from the top */
+            padding-top: 60px; /* Space for controls */
+        }
+
+        /* --- HEADERS --- */
+        h1 {
+            font-size: 3.5vh;
+            color: #e94560;
+            font-family: 'Arial Black', sans-serif;
+            text-shadow: 0 0 20px #e94560;
+            margin: 0 0 5px 0; 
+            letter-spacing: 2px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .click-hint {
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-bottom: 5px;
+            font-weight: bold;
+            opacity: 0.8;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        /* --- MACHINE FRAME --- */
+        .slot-machine-frame {
+            background-color: #16213e;
+            border: 8px solid #0f3460;
+            outline: 4px solid #e94560;
+            border-radius: 25px;
+            padding: 30px; /* Tightened padding */
+            display: inline-block;
+            box-shadow: 0 0 60px rgba(233, 69, 96, 0.2);
+            position: relative; 
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        /* CORNER STICKERS */
+        .sticker {
+            position: absolute;
+            font-size: 70px;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+            z-index: 20;
+            pointer-events: none;
+        }
+        .sticker.visible { opacity: 1; transform: scale(1) rotate(-10deg); }
+        .sticker.visible:nth-child(even) { transform: scale(1) rotate(10deg); }
+
+        #sticker-tl { top: -30px; left: -30px; transform-origin: bottom right; }
+        #sticker-tr { top: -30px; right: -30px; transform-origin: bottom left; }
+        #sticker-bl { bottom: -30px; left: -30px; transform-origin: top right; }
+        #sticker-br { bottom: -30px; right: -30px; transform-origin: top left; }
+
+        .machine-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; 
+        }
+
+        .machine-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            background: #0f0f1a;
+            padding: 10px;
+            border-radius: 15px;
+            border: 2px solid #533483;
+            box-shadow: inset 0 0 20px #000;
+        }
+
+        /* REELS */
+        .reel {
+            width: 240px; 
+            height: 110px; 
+            background-color: #f0f0f0;
+            border: 4px solid #533483;
+            border-radius: 12px;
+            color: #1a1a2e;
+            font-size: 18px; 
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            padding: 8px;
+            cursor: pointer; 
+            transition: all 0.2s;
+            box-shadow: inset 0 25px 20px -10px rgba(0,0,0,0.5), inset 0 -25px 20px -10px rgba(0,0,0,0.5);
+        }
+        .reel:hover { border-color: #e94560; box-shadow: 0 0 20px #e94560; }
+        .reel:active { transform: scale(0.98); }
+
+        .text {
+            width: 100%;
+            line-height: 1.2;
+            word-wrap: break-word; 
+            white-space: normal;
+            pointer-events: none; 
+        }
+
+        .reel-label {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd700; 
+            font-size: 12px; 
+            font-weight: 900; 
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .save-btn {
+            font-size: 16px;
+            padding: 0 15px;
+            background: #e94560;
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            height: 110px; 
+            font-weight: 900;
+            box-shadow: 0 4px 0 #8b0000;
+            transition: all 0.1s;
+        }
+        .save-btn:hover { background: #ff6b81; transform: translateY(3px); box-shadow: 0 2px 0 #8b0000; }
+
+        button.spin-btn {
+            font-size: 26px;
+            font-family: 'Arial Black', sans-serif;
+            padding: 10px 60px;
+            margin-top: 10px; 
+            background: linear-gradient(to bottom, #ffd700, #ffa500);
+            color: #333;
+            border: 4px solid #fff;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+            transition: transform 0.1s;
+            flex-shrink: 0;
+        }
+        button.spin-btn:hover { transform: scale(1.05); }
+
+        .or-text {
+            font-size: 20px; 
+            font-weight: 900;
+            color: #fff;
+            background: none; 
+            border: none;
+            margin: -5px 0; 
+            text-shadow: 0 0 10px #e94560;
+            z-index: 5;
+        }
+
+        /* IDEA LOG (Fixed Visibility) */
+        .saved-wrapper {
+            width: 90%;
+            max-width: 1000px;
+            background: #fff;
+            border-radius: 15px 15px 0 0;
+            border: 4px solid #e94560;
+            border-bottom: none;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px; /* Ensure it's tall enough */
+            margin-top: 15px; 
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            z-index: 20;
+        }
+
+        .saved-header {
+            background: #e94560;
+            color: white;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 10px 10px 0 0;
+            flex-shrink: 0;
+        }
+
+        .saved-ideas {
+            padding: 20px;
+            color: #2d3436;
+            font-size: 18px;
+            text-align: left;
+            overflow-y: auto; 
+            flex-grow: 1;
+            font-family: 'Verdana', sans-serif;
+            padding-bottom: 30px;
+        }
+
+        .saved-ideas::-webkit-scrollbar { width: 12px; }
+        .saved-ideas::-webkit-scrollbar-track { background: #f1f1f1; }
+        .saved-ideas::-webkit-scrollbar-thumb { background: #e94560; border-radius: 6px; }
+
+        .clear-btn {
+            font-size: 12px;
+            padding: 5px 15px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #jackpotMessage {
+            color: #ffd700;
+            font-size: 18px;
+            font-weight: bold;
+            height: 22px;
+            margin-top: 5px;
+            text-shadow: 0 0 10px #ffd700;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+
+        /* ANIMATIONS */
+        .spinning .text {
+            animation: scrollDown 0.1s linear infinite;
+            opacity: 0.5;
+            filter: blur(3px);
+        }
+        @keyframes scrollDown {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        
+        .locked { animation: flashGold 0.3s ease-out; }
+        @keyframes flashGold {
+            0% { background-color: #ffd700; transform: scale(1.05); }
+            100% { background-color: #f0f0f0; transform: scale(1); }
+        }
+
+        /* EXPLOSION OVERLAY */
+        #timeUpOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(200, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            color: white;
+            font-family: 'Arial Black', sans-serif;
+            font-size: 100px;
+            text-shadow: 5px 5px 0 #000;
+            animation: flashRed 0.5s infinite;
+        }
+        @keyframes flashRed {
+            0% { background: rgba(200, 0, 0, 0.8); }
+            50% { background: rgba(255, 100, 0, 0.8); }
+            100% { background: rgba(200, 0, 0, 0.8); }
+        }
+        .shake { animation: shake 0.5s; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="timeUpOverlay">
+        <div>TIME'S UP!</div>
+        <button class="clear-btn" onclick="closeOverlay()" style="font-size:20px; margin-top:20px;">OKAY</button>
+    </div>
+
+    <div class="zoom-controls">
+        <span>Zoom:</span>
+        <input type="range" min="0.5" max="1.1" step="0.1" value="1" class="zoom-slider" oninput="setZoom(this.value)">
+    </div>
+
+    <div id="soundToggle" onclick="toggleSound()">🔊</div>
+    
+    <div class="timer-container">
+        <input type="number" id="timeInput" class="timer-input" placeholder="Min" min="1" max="60">
+        <button class="timer-btn" onclick="startTimer()">START</button>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+    </div>
+
+    <div id="app-scaler">
+
+        <h1>🚀 STORY GENERATOR 3000 🚀</h1>
+        <div class="click-hint">Tip: Click any box to re-spin just that one!</div>
+        
+        <div class="slot-machine-frame">
+            
+            <div class="sticker" id="sticker-tl"></div>
+            <div class="sticker" id="sticker-tr"></div>
+            <div class="sticker" id="sticker-bl"></div>
+            <div class="sticker" id="sticker-br"></div>
+
+            <div class="machine-container">
+                <div class="machine-row">
+                    <div style="position:relative"><div class="reel-label">GENRE</div><div class="reel" id="genre1" onclick="spinGenre(1)"><div class="text">Fantasy</div></div></div>
+                    <div style="position:relative"><div class="reel-label">CHARACTER</div><div class="reel" id="character1" onclick="spinIndividual('character1')"><div class="text">Harry Potter</div></div></div>
+                    <div style="position:relative"><div class="reel-label">PLOT</div><div class="reel" id="plot1" onclick="spinIndividual('plot1')"><div class="text">Loses a wand</div></div></div>
+                    <div style="position:relative"><div class="reel-label">SETTING</div><div class="reel" id="setting1" onclick="spinIndividual('setting1')"><div class="text">At Hogwarts</div></div></div>
+                    <button class="save-btn" onclick="saveIdea(1)">SAVE</button>
+                </div>
+                
+                <div class="or-text">OR</div>
+                
+                <div class="machine-row">
+                    <div class="reel" id="genre2" onclick="spinGenre(2)"><div class="text">Sci-Fi</div></div>
+                    <div class="reel" id="character2" onclick="spinIndividual('character2')"><div class="text">Baby Yoda</div></div>
+                    <div class="reel" id="plot2" onclick="spinIndividual('plot2')"><div class="text">Fixes a ship</div></div>
+                    <div class="reel" id="setting2" onclick="spinIndividual('setting2')"><div class="text">On the Death Star</div></div>
+                    <button class="save-btn" onclick="saveIdea(2)">SAVE</button>
+                </div>
+            </div>
+
+            <button class="spin-btn" onclick="spin()">SPIN ALL</button>
+            <div id="jackpotMessage"></div>
+        </div>
+
+        <div class="saved-wrapper">
+            <div class="saved-header">
+                <span style="margin-left:10px;">📝 Idea Log</span>
+                <button class="clear-btn" onclick="clearIdeas()" style="margin-right:10px;">Clear List</button>
+            </div>
+            <div class="saved-ideas" id="savedIdeas"></div>
+            <div style="font-size:10px; color:#555; padding:5px; text-align:right; margin-right:10px;">© 2025 Paper & Pixels. All Rights Reserved.</div>
+        </div>
+
+    </div> <script>
+        // --- ZOOM FUNCTION ---
+        function setZoom(val) {
+            document.getElementById('app-scaler').style.transform = `scale(${val})`;
+        }
+
+        // --- ICONS ---
+        const genreIcons = {
+            "Fantasy": ["🏰", "🧙‍♂️", "🐉", "⚔️", "🛡️"],
+            "Fairy Tale": ["🦄", "👑", "🐸", "🧚", "🍄"],
+            "Sci-Fi": ["👽", "🚀", "🪐", "🤖", "☄️"],
+            "Mystery": ["🕵️‍♀️", "🔍", "👣", "🔦", "🗝️"],
+            "Comedy": ["😂", "🍌", "🤡", "🐔", "🤪"],
+            "Adventure": ["🗺️", "🧗", "🌋", "🧭", "🎒"],
+            "Spy": ["🕶️", "💼", "🧨", "🚁", "📡"],
+            "Western": ["🤠", "🌵", "🐎", "💰", "👢"],
+            "Scary": ["👻", "🦇", "🧛", "🧟", "🕸️"],
+            "Romance": ["💖", "💌", "🌹", "🍫", "💍"],
+            "Historical": ["📜", "🏛️", "👑", "🏺", "🕯️"],
+            "Sports": ["🏆", "⚽", "🏀", "🥇", "👟"]
+        };
+
+        const weirdSettings = ["On the Moon", "In a Haunted House", "At the Super Bowl", "Inside a Volcano", "In a Time Machine", "Under the Bed", "Inside a whale", "At a clown college"];
+
+        // --- STRICT DATA DICTIONARY ---
+        const genreMap = {
+            "Fantasy": {
+                chars: ["Harry Potter", "Shrek", "A breathless Dragon", "King Arthur", "Elsa", "A Minion wizard", "Gandalf", "The Tooth Fairy", "A Minecraft Steve", "An angry Unicorn", "Gandalf in short shorts", "A Dragon wearing a tuxedo", "A magical Talking Tree", "A Goblin Banker", "A Mermaid with legs"],
+                plots: ["Must find a Golden Toilet", "Has to baby-sit a dragon", "Accidentally deletes the world", "Loses their magic powers", "Gets turned into a llama", "Must steal a magical ring", "Tries to order Pizza", "Gets stuck in a video game", "Falls off a broomstick", "Must wake a sleeping giant"],
+                settings: ["In a castle", "In a magical forest", "Inside a giant's pocket", "On a cloud made of candy", "In a library of flying books", "Under a bridge", "Inside a dragon's cave", "At a medieval McDonald's", "In a crystal cavern"]
+            },
+            "Fairy Tale": {
+                chars: ["A Prince", "A Wicked Witch", "A talking Frog", "Cinderella", "Puss in Boots", "A Fairy Godmother", "A Big Bad Wolf", "A sleepy Knight", "Cinderella in sweatpants", "A Wolf in a tutu", "The Gingerbread Man", "Goldilocks", "Pinocchio"],
+                plots: ["Loses a glass slipper", "Wakes up from a 100-year nap", "Climbs a giant beanstalk", "Gets lost in the woods", "Tricks a troll", "Can't find their horse", "Accidentally kisses a frog", "Must spin straw into gold", "Gets locked in a tower"],
+                settings: ["In a gingerbread house", "In a tower with no door", "In an enchanted pumpkin patch", "At a royal ball", "In a house made of straw", "In a shoe (where an old lady lives)", "In a deep dark well", "At a wishing well"]
+            },
+            "Sci-Fi": {
+                chars: ["Baby Yoda", "Iron Man", "Wall-E", "A Martian", "Darth Vader", "A Cyborg Teacher", "Buzz Lightyear", "A glittery Alien", "Mega Man", "A Time Traveler", "Darth Vader in a Hawaiian shirt", "A Robot with a cold", "An Astronaut who is afraid of heights"],
+                plots: ["Must fix a spaceship", "Gets ejected from a ship", "Travels to the year 3000", "Fights a robot army", "Discovers pizza on Mars", "Swaps brains with a chicken", "Accidentally deletes history", "Meets their future self", "Finds a button they shouldn't press"],
+                settings: ["On the Death Star", "In a city where gravity floats", "Inside a robot's stomach", "On a planet made of glass", "In a spaceship", "In a secret lab", "On the Moon", "Inside a black hole", "In a holographic room"]
+            },
+            "Mystery": {
+                chars: ["A Detective", "A Student Journalist", "A Nosy Neighbor", "A Spy", "Scooby Doo", "Sherlock Holmes", "A Police Officer", "The Principal", "Sherlock in pajamas", "A Detective who is a dog", "Nancy Drew", "A suspicious Butler"],
+                plots: ["Solves a missing lunch mystery", "Finds a secret map", "Tracks a thief", "Discovers a hidden tunnel", "Finds a clue in a locker", "Witnesses a crime", "Investigates stolen test answers", "Finds a footprint on the ceiling", "Cracks a secret code"],
+                settings: ["In a dark alley", "At a museum", "In a library", "In an abandoned house", "At school at night", "On a foggy street", "In a misty graveyard", "Inside a locked vault", "At an antique shop"]
+            },
+            "Comedy": {
+                chars: ["Peppa Pig", "SpongeBob", "The Lunch Lady", "A Grumpy Cat", "A Clown", "A Chicken", "The Principal", "A Minion", "Class Clown", "A Mime who talks too much", "A Baby Boss", "A Cat in a hat"],
+                plots: ["Goes viral online", "Gets locked out of their house", "Loses their pants", "Must eat 50 hot dogs", "Accidentally becomes President", "Breaks a world record", "Accidentally pulls the fire alarm", "Gets detention for no reason", "Slips on a banana peel"],
+                settings: ["At a circus", "In a cafeteria", "At a birthday party", "In a bouncy castle", "At the zoo", "In a supermarket", "In a bathroom stall", "In a car wash", "At a pie eating contest"]
+            },
+            "Adventure": {
+                chars: ["Batman", "Spiderman", "Wonder Woman", "Sonic the Hedgehog", "Mario", "Captain Underpants", "A Secret Agent", "Black Panther", "Indiana Jones", "A Survivor", "Batman wearing Crocs", "A Pirate with two eye patches", "Lara Croft"],
+                plots: ["Must save the City", "Defuses a stink bomb", "Escapes a creeper explosion", "Races against a cheetah", "Steals a secret formula", "Fights a super-villain", "Finds fresh water", "Survives a tornado", "Climbs the highest mountain"],
+                settings: ["In a volcano", "On a deserted island", "In a hidden temple", "On a sinking ship", "In a jungle", "On top of a speeding train", "In a cavern", "Under a waterfall", "In a shark tank"]
+            },
+            "Spy": {
+                chars: ["A Secret Agent", "A Double Agent", "A Master of Disguise", "A Hacker", "A Gadget Expert", "A Student Spy", "A Teacher undercover", "Black Widow", "James Bond in gym clothes"],
+                plots: ["Steals a secret chip", "Hacks a mainframe", "Escapes a laser trap", "Goes undercover", "Diffuses a bomb", "Intercepts a message", "Wears a disguise", "Jumps out of a plane"],
+                settings: ["In a villain's lair", "Inside a bank vault", "In a ventilation shaft", "At a fancy tuxedo party", "On a submarine", "In an elevator shaft", "In a high-tech van"]
+            },
+            "Western": {
+                chars: ["A Sheriff", "A Bandit", "A Cowboy", "A Gold Miner", "A Rancher", "A Bounty Hunter", "A Saloon Owner", "A Sheriff riding an Ostrich", "A Cowboy who hates horses", "A lone Ranger", "A horse that talks"],
+                plots: ["Must catch a train", "Finds a map to gold", "Duels at high noon", "Loses their hat", "Tames a wild bull", "Protects the town bank", "Chases a bandit", "Wins a poker game", "Finds water in the desert"],
+                settings: ["In a dusty saloon", "In a ghost town", "In a canyon of echoes", "At a rodeo for chickens", "On a steam train", "In a gold mine", "At the O.K. Corral", "Around a campfire"]
+            },
+            "Scary": {
+                chars: ["A Vampire", "A Ghost", "A Zombie", "Wednesday Addams", "A Skeleton", "A Cursed Doll", "A Werewolf", "A Werewolf in a dress", "The Grim Reaper", "A Headless Horseman", "A Clown with sharp teeth", "A Mummy"],
+                plots: ["Is chased by a shadow", "Hears strange noises", "Gets trapped in a basement", "Finds a haunted book", "Escapes a monster", "Sees a ghost", "Turns into a bat", "Finds a skeleton in the closet"],
+                settings: ["In a haunted mansion", "In a graveyard", "In a dark basement", "In a misty swamp", "In an old attic", "In a mirror maze", "Under the bed", "In an abandoned hospital"]
+            },
+            "Romance": {
+                chars: ["A Pop Star", "A Football Player", "Barbie", "Ken", "A Vampire", "A Werewolf", "Mario", "Peach", "A Student", "A Secret Crush", "Spider-Man", "A Mermaid", "A Librarian", "Taylor Swift", "Travis Kelce", "Ariana Grande"],
+                plots: ["Tries to ask them to Prom", "Writes a bad love song", "Gets stuck on a ferris wheel", "Accidentally texts the wrong person", "Shares a milkshake", "Goes on a terrible date", "Writes a secret note", "Gets caught in the rain"],
+                settings: ["At a Valentine's dance", "In a field of flowers", "At the movies", "At a coffee shop", "On a romantic picnic", "At a concert", "In the rain", "At a wedding"]
+            },
+            "Historical": {
+                chars: ["Abraham Lincoln", "Albert Einstein", "Cleopatra", "Amelia Earhart", "William Shakespeare", "A Medieval Knight", "A Viking Warrior", "George Washington", "Lincoln with a green beard", "Einstein with a mohawk", "A Samurai"],
+                plots: ["Discovers a new continent", "Invents a lightbulb", "Writes a famous play", "Builds a pyramid", "Signs a peace treaty", "Crosses an ocean", "Paints a masterpiece", "Invents Pizza", "Fights a dragon"],
+                settings: ["In Ancient Rome", "Inside a pyramid", "On the Mayflower", "In a medieval castle", "On a Viking longship", "In a royal court", "In a gladiator arena", "On the Titanic"]
+            },
+            "Sports": {
+                chars: ["A Star Quarterback", "A Pro Baseball Pitcher", "A Goalie", "A Tennis Champion", "The Referee", "A Team Mascot", "A Benchwarmer", "A Wrestling Champ", "A Referee who is blind", "A Mascot who can't see", "Serena Williams", "LeBron James", "A Skateboarder", "Michael Jordan", "Steph Curry"],
+                plots: ["Must win the World Series", "Scores a winning touchdown", "Gets a red card", "Strikes out the side", "Makes a buzzer-beater shot", "Forgets their uniform", "Wins a Gold Medal", "Loses the game ball", "Misses the penalty kick"],
+                settings: ["On a field made of ice", "At the World Cup", "In a stadium with no lights", "In a locker room", "At the Olympics", "On a tennis court", "In a wrestling ring", "At a skate park"]
+            }
+        };
+
+        // Inject weird settings
+        Object.keys(genreMap).forEach(key => {
+            for(let i=0; i<2; i++) {
+                genreMap[key].settings.push(weirdSettings[Math.floor(Math.random() * weirdSettings.length)]);
+            }
+        });
+
+        const genres = Object.keys(genreMap);
+
+        // --- GLOBAL RESULTS ---
+        let finalResults = {
+            1: { genre: "Fantasy", character: "Harry Potter", charSize: "16px", plot: "Loses a wand", setting: "At Hogwarts" },
+            2: { genre: "Sci-Fi", character: "Baby Yoda", charSize: "16px", plot: "Fixes a ship", setting: "On the Death Star" }
+        };
+
+        // --- AUDIO SYSTEM ---
+        let audioCtx;
+        let isMuted = false;
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            const btn = document.getElementById("soundToggle");
+            btn.innerText = isMuted ? "🔇" : "🔊";
+            btn.style.opacity = isMuted ? "0.6" : "0.3";
+            if(isMuted && audioCtx) audioCtx.suspend();
+            if(!isMuted && audioCtx) audioCtx.resume();
+        }
+
+        function initAudio() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended' && !isMuted) audioCtx.resume();
+            } catch(e) {}
+        }
+        
+        // Steady Tick Sound
+        function playTick() {
+            if (isMuted) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle'; 
+                osc.frequency.value = 200; 
+                gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); 
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            } catch(e) {}
+        }
+
+        // LOCKING SOUND (Crisp Snap)
+        function playLockSound() {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth'; 
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); 
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            } catch(e) {}
+        }
+
+        // GENRE SPECIFIC FINAL SOUND
+        function playGenreSound(genre) {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                let type = 'triangle';
+                let notes = [523, 659, 783]; 
+
+                if(genre === "Sci-Fi") { type='sawtooth'; notes=[800, 600, 400]; } 
+                else if(genre === "Western") { type='square'; notes=[200, 300, 400]; }
+                else if(genre === "Fantasy" || genre === "Fairy Tale") { type='sine'; notes=[1000, 1200, 1500]; }
+                else if(genre === "Scary" || genre === "Mystery") { type='sawtooth'; notes=[100, 110, 100]; }
+                else if(genre === "Sports") { type='square'; notes=[1800, 1500, 1800, 1500, 1800]; } 
+                else if(genre === "Romance") { type='sine'; notes=[500, 600, 800]; }
+
+                notes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.value = freq;
+                    if(genre === "Sci-Fi") osc.frequency.exponentialRampToValueAtTime(freq*2, now + 0.3);
+                    const start = now + (i * 0.1);
+                    gain.gain.setValueAtTime(0.1, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(start); osc.stop(start + 0.8);
+                });
+            } catch(e) {}
+        }
+
+        // EXPLOSION SOUND (White Noise)
+        function playExplosion() {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const bufferSize = audioCtx.sampleRate * 2; 
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start();
+            } catch(e) {}
+        }
+
+        // --- TIMER LOGIC ---
+        let timerInterval = null;
+        function startTimer() {
+            const input = document.getElementById("timeInput");
+            const display = document.getElementById("timerDisplay");
+            let mins = parseInt(input.value);
+            if(!mins || mins <= 0) return;
+            clearInterval(timerInterval);
+            document.getElementById("timeUpOverlay").style.display = "none";
+            let seconds = mins * 60;
+            timerInterval = setInterval(() => {
+                seconds--;
+                let m = Math.floor(seconds / 60);
+                let s = seconds % 60;
+                display.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                if(seconds <= 0) {
+                    clearInterval(timerInterval);
+                    triggerTimeUp();
+                }
+            }, 1000);
+        }
+
+        function triggerTimeUp() {
+            document.getElementById("timeUpOverlay").style.display = "flex";
+            document.body.classList.add("shake");
+            playExplosion();
+            setTimeout(() => document.body.classList.remove("shake"), 500);
+        }
+
+        function closeOverlay() { document.getElementById("timeUpOverlay").style.display = "none"; }
+
+        // --- SPIN LOGIC ---
+        function spin() {
+            document.getElementById("jackpotMessage").innerText = "";
+            const stickers = document.querySelectorAll('.sticker');
+            stickers.forEach(s => { s.className = 'sticker'; s.innerText = ''; }); 
+            
+            spinRow(1);
+            setTimeout(() => spinRow(2), 600); 
+        }
+
+        function spinRow(rowNum) {
+            // PRE-CALCULATE
+            const newGenre = getRand(genres);
+            finalResults[rowNum].genre = newGenre;
+            finalResults[rowNum].character = getItemForGenre(newGenre, 'character');
+            finalResults[rowNum].plot = getItemForGenre(newGenre, 'plot');
+            finalResults[rowNum].setting = getItemForGenre(newGenre, 'setting');
+
+            // 2. ANIMATE with hard timer
+            animateReel(`genre${rowNum}`, newGenre);
+            setTimeout(() => animateReel(`character${rowNum}`, finalResults[rowNum].character), 400); 
+            setTimeout(() => animateReel(`plot${rowNum}`, finalResults[rowNum].plot), 800);
+            setTimeout(() => animateReel(`setting${rowNum}`, finalResults[rowNum].setting), 1200);
+        }
+
+        function spinGenre(rowNum) { spinRow(rowNum); }
+        
+        function spinIndividual(id) {
+            const rowNum = id.slice(-1); 
+            const type = id.replace(rowNum, ""); 
+            const currentGenre = finalResults[rowNum].genre;
+            
+            // Re-roll based on CURRENT genre
+            const newItem = getItemForGenre(currentGenre, type);
+            finalResults[rowNum][type] = newItem;
+            
+            animateReel(id, newItem);
+        }
+
+        function getRand(arr) { 
+            if (!arr || arr.length === 0) return "Unknown";
+            return arr[Math.floor(Math.random() * arr.length)]; 
+        }
+
+        function getItemForGenre(genre, type) {
+            const pool = genreMap[genre] || genreMap["Fantasy"];
+            if (type === 'setting') return getRand(pool.settings);
+            if (type === 'plot') return getRand(pool.plots);
+            if (type === 'character') {
+                if (genre === "Romance") return `${getRand(pool.chars)} & ${getRand(pool.chars)}`;
+                return getRand(pool.chars);
+            }
+        }
+
+        // --- HARD TIMER ANIMATION ---
+        function animateReel(id, finalValue) {
+            const reel = document.getElementById(id).querySelector(".text");
+            const reelContainer = document.getElementById(id);
+            reel.style.fontSize = "18px"; 
+            if(finalValue.includes("&")) reel.style.fontSize = "13px";
+
+            reelContainer.classList.add("spinning");
+            
+            // Safe lookup for flash list
+            const pool = genreMap[finalResults[id.slice(-1)].genre] || genreMap["Fantasy"];
+            let flashList = genres; 
+            if(id.includes("setting")) flashList = pool.settings;
+            else if(id.includes("character")) flashList = pool.chars;
+            else if(id.includes("plot")) flashList = pool.plots;
+
+            // FLASHER INTERVAL (Visuals only)
+            const flashInterval = setInterval(() => {
+                reel.innerText = getRand(flashList);
+                // Soft "Purring" sound
+                if(Math.random() > 0.5) playTick();
+            }, 60);
+
+            // STOPPER TIMEOUT (Hard Stop after 1s)
+            setTimeout(() => {
+                clearInterval(flashInterval); // Kill visuals
+                
+                reelContainer.classList.remove("spinning");
+                reelContainer.classList.add("locked"); 
+                setTimeout(() => reelContainer.classList.remove("locked"), 300);
+                
+                reel.innerText = finalValue; // Set final text
+                playLockSound(); 
+
+                // Stickers
+                if(id.includes("setting")) {
+                    const rowNum = id.slice(-1);
+                    const g = finalResults[rowNum].genre;
+                    const icons = genreIcons[g] || ["❓", "❓", "❓", "❓"];
+                    
+                    let s1 = getRand(icons);
+                    let s2 = getRand(icons);
+                    while(s1 === s2) s2 = getRand(icons);
+
+                    if(rowNum === "1") {
+                        document.getElementById("sticker-tl").innerText = s1;
+                        document.getElementById("sticker-tr").innerText = s2;
+                        document.getElementById("sticker-tl").classList.add("visible");
+                        document.getElementById("sticker-tr").classList.add("visible");
+                    } else {
+                        document.getElementById("sticker-bl").innerText = s1;
+                        document.getElementById("sticker-br").innerText = s2;
+                        document.getElementById("sticker-bl").classList.add("visible");
+                        document.getElementById("sticker-br").classList.add("visible");
+                        checkJackpot();
+                    }
+                    playGenreSound(g);
+                }
+            }, 1000 + (Math.random() * 200)); 
+        }
+
+        function saveIdea(row) {
+            const data = finalResults[row];
+            let idea = `<strong>${data.genre}</strong>: ${data.character} who ${data.plot.toLowerCase()} ${data.setting.toLowerCase()}.`;
+            const savedBox = document.getElementById("savedIdeas");
+            savedBox.innerHTML = `<div style="border-bottom:1px dashed #ccc; padding:8px 0;">${idea}</div>` + savedBox.innerHTML;
+        }
+
+        function clearIdeas() { document.getElementById("savedIdeas").innerHTML = ""; }
+
+        function checkJackpot() {
+            if (finalResults[1].genre === finalResults[2].genre) {
+                document.getElementById("jackpotMessage").innerText = "✨ MATCHING GENRE BONUS! ✨";
+            }
+        }
+    </script>
+</body>
+</html>
