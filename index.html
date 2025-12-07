@@ -1,99 +1,643 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Paper & Pixels - Story Generator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Generator 3000</title>
     <style>
+        /* --- CORE STYLES (MATCHING ORIGINAL LAPTOP VER) --- */
         body {
             font-family: 'Verdana', sans-serif;
-            background-color: #1a1a2e;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
             text-align: center;
-        }
-
-        h1 {
-            color: #e94560;
-            font-size: 2.5rem;
-            margin-bottom: 40px;
-            text-shadow: 0 0 10px #e94560;
-        }
-
-        .button-container {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .menu-btn {
-            display: block;
-            width: 220px;
-            padding: 30px;
-            text-decoration: none;
-            background: #16213e;
-            border: 4px solid #0f3460;
-            border-radius: 20px;
-            transition: all 0.3s;
+            background-color: #1a1a2e;
+            background-image: radial-gradient(circle at center, #2b2b40 0%, #0f0f1a 100%);
+            margin: 0; padding: 0;
             color: white;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        .menu-btn:hover {
-            transform: translateY(-5px);
-            border-color: #e94560;
-            box-shadow: 0 0 30px rgba(233, 69, 96, 0.4);
+        /* --- SCREEN 1: LANDING PAGE --- */
+        #landing-page {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: #1a1a2e; z-index: 5000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .menu-title { font-family: 'Arial Black', sans-serif; font-size: 3rem; color: #e94560; margin-bottom: 50px; text-shadow: 0 0 20px #e94560; }
+        .menu-btn-container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+        .menu-choice {
+            background: #16213e; border: 4px solid #0f3460; border-radius: 20px; padding: 30px; width: 220px;
+            cursor: pointer; transition: 0.3s; color: white; margin: 10px;
+        }
+        .menu-choice:hover { border-color: #e94560; transform: translateY(-10px); box-shadow: 0 0 25px rgba(233, 69, 96, 0.4); }
+
+        /* --- SCREEN 2: MAIN APP --- */
+        #app-container {
+            display: none; flex-direction: column; align-items: center; width: 100%; height: 100%;
         }
 
-        .btn-icon {
-            font-size: 50px;
-            margin-bottom: 15px;
-            display: block;
+        /* --- CONTROLS --- */
+        #soundToggle {
+            position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer;
+            opacity: 0.6; transition: opacity 0.3s; z-index: 100;
+            background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%;
+        }
+        #soundToggle:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+
+        #zoomControls {
+            position: absolute; top: 15px; right: 80px; z-index: 100;
+            display: none; /* Hidden by default */
+            background: #000; border: 2px solid #333; border-radius: 10px; padding: 5px;
+            align-items: center; gap: 5px;
+        }
+        .zoom-btn { background: #333; color: white; border: 1px solid #555; cursor: pointer; width: 30px; height: 30px; font-weight: bold; border-radius: 5px; }
+        .zoom-btn:hover { background: #e94560; }
+
+        .timer-container {
+            position: absolute; top: 15px; left: 15px; background: #000; border: 2px solid #333;
+            border-radius: 10px; padding: 8px; display: flex; align-items: center; gap: 10px; z-index: 100;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+        .timer-display {
+            font-family: 'Courier New', Courier, monospace; font-size: 20px; color: #00ff00;
+            font-weight: bold; text-shadow: 0 0 5px #00ff00; background: #111; padding: 5px;
+            border-radius: 5px; width: 70px; text-align: center;
+        }
+        .timer-input { width: 50px; background: #222; border: 1px solid #444; color: white; font-size: 16px; text-align: center; padding: 5px; border-radius: 5px; }
+        .timer-btn { background: #00cec9; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .timer-btn:hover { background: #0984e3; }
+
+        /* --- MACHINE --- */
+        h1 { font-size: 3.5vh; color: #e94560; font-family: 'Arial Black', sans-serif; text-shadow: 0 0 20px #e94560; margin: 15px 0 5px 0; z-index: 10; }
+        .click-hint { font-size: 12px; color: #a0a0a0; margin-bottom: 5px; font-weight: bold; z-index: 10; }
+
+        .slot-machine-frame {
+            background-color: #16213e; border: 8px solid #0f3460; outline: 4px solid #e94560;
+            border-radius: 25px; padding: 30px; display: inline-block;
+            box-shadow: 0 0 60px rgba(233, 69, 96, 0.2); position: relative; z-index: 10;
+            transform-origin: top center; transition: transform 0.3s;
         }
 
-        .btn-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 5px;
-            color: #ffd700;
+        /* Stickers */
+        .sticker { position: absolute; font-size: 60px; opacity: 0; transition: 0.4s; z-index: 20; pointer-events: none; }
+        .sticker.visible { opacity: 1; transform: scale(1) rotate(-10deg); }
+        #sticker-tl { top: -30px; left: -30px; } #sticker-tr { top: -30px; right: -30px; }
+        #sticker-bl { bottom: -30px; left: -30px; } #sticker-br { bottom: -30px; right: -30px; }
+
+        .machine-container { display: flex; flex-direction: column; gap: 10px; }
+        .machine-row {
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            background: #0f0f1a; padding: 10px; border-radius: 15px; border: 2px solid #533483;
+            box-shadow: inset 0 0 20px #000;
         }
 
-        .btn-desc {
-            font-size: 0.9rem;
-            color: #a0a0a0;
+        .reel-wrapper { position: relative; }
+        
+        /* The Edit Pencil */
+        .edit-icon {
+            position: absolute; top: -20px; right: -5px; font-size: 14px; cursor: pointer;
+            color: #555; z-index: 50; transition: 0.2s; background: #16213e; border-radius: 50%; padding: 2px;
+        }
+        .edit-icon:hover { color: #fff; background: #e94560; transform: scale(1.1); }
+
+        .reel {
+            width: 200px; height: 110px; background-color: #f0f0f0; border: 4px solid #533483;
+            border-radius: 12px; color: #1a1a2e; font-size: 18px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            position: relative; padding: 8px; cursor: pointer; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .reel:hover { border-color: #e94560; }
+        .reel.locked { border-color: #ffd700; background: #fffadc; border-width: 4px; }
+        
+        .reel-label {
+            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+            color: #ffd700; font-size: 12px; font-weight: 900; letter-spacing: 1px;
+            text-shadow: 2px 2px 0 #000; width: 100%; pointer-events: none;
         }
 
-        footer {
-            margin-top: 50px;
-            font-size: 0.8rem;
-            opacity: 0.5;
+        .save-btn {
+            font-size: 16px; padding: 0 15px; background: #e94560; color: #fff;
+            border: 2px solid #fff; border-radius: 10px; cursor: pointer; height: 110px;
+            font-weight: 900; box-shadow: 0 4px 0 #8b0000;
         }
+        .save-btn:hover { background: #ff6b81; transform: translateY(3px); box-shadow: 0 2px 0 #8b0000; }
+
+        button.spin-btn {
+            font-size: 26px; font-family: 'Arial Black', sans-serif; padding: 10px 60px;
+            margin-top: 15px; background: linear-gradient(to bottom, #ffd700, #ffa500);
+            color: #333; border: 4px solid #fff; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+        }
+        button.spin-btn:hover { transform: scale(1.05); }
+        .or-text { font-size: 20px; font-weight: 900; color: #fff; margin: -5px 0; text-shadow: 0 0 10px #e94560; }
+
+        /* IDEA LOG */
+        .saved-wrapper {
+            width: 90%; max-width: 1000px; background: #fff; border-radius: 15px 15px 0 0;
+            border: 4px solid #e94560; border-bottom: none; display: flex; flex-direction: column;
+            flex-grow: 1; min-height: 0; margin-top: 15px;
+        }
+        .saved-header { background: #e94560; color: white; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; }
+        .saved-ideas { padding: 20px; color: #2d3436; font-size: 18px; text-align: left; overflow-y: auto; flex-grow: 1; }
+        .copyright { font-size: 12px; color: #aaa; margin: 10px; }
+
+        /* STYLED MODAL */
+        .modal-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-box {
+            background: #16213e; border: 4px solid #e94560; padding: 30px; border-radius: 20px; width: 350px;
+            box-shadow: 0 0 40px rgba(233, 69, 96, 0.6); text-align: center;
+        }
+        .modal-title {
+            color: #ffd700; font-size: 1.5rem; margin-top: 0; font-family: 'Arial Black', sans-serif;
+            letter-spacing: 1px; text-shadow: 0 2px 0 #000;
+        }
+        .modal-label { color: #fff; font-size: 0.9rem; margin-top: 15px; margin-bottom: 5px; display: block; text-align: left; font-weight: bold; }
+        .modal-select, .modal-input {
+            width: 100%; padding: 12px; background: #0f0f1a; border: 2px solid #533483; 
+            color: white; border-radius: 10px; font-size: 1rem; outline: none; box-sizing: border-box;
+        }
+        .modal-select:focus, .modal-input:focus { border-color: #e94560; }
+        .modal-actions { margin-top: 25px; display: flex; gap: 10px; justify-content: center; }
+        .modal-btn { padding: 12px 20px; cursor: pointer; border: none; border-radius: 50px; font-weight: bold; flex: 1; font-family: 'Verdana', sans-serif; transition: 0.2s; }
+        .btn-cancel { background: #333; color: #aaa; border: 2px solid #555; }
+        .btn-cancel:hover { background: #444; color: white; }
+        .btn-confirm { background: linear-gradient(to bottom, #ffd700, #ffa500); color: #1a1a2e; border: 2px solid #fff; }
+        .btn-confirm:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+        
+        #jackpotMessage { color: #ffd700; font-size: 18px; font-weight: bold; height: 22px; margin-top: 5px; }
+
+        /* ANIMATION & MODES */
+        .spinning .text { animation: scrollDown 0.1s linear infinite; opacity: 0.5; filter: blur(3px); }
+        @keyframes scrollDown { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+        
+        body.student-mode { overflow-y: auto; }
+        body.projector-mode .saved-wrapper, body.projector-mode .click-hint { display: none; }
+        body.projector-mode #zoomControls { display: flex; }
+
     </style>
 </head>
 <body>
 
-    <h1>CHOOSE YOUR VERSION</h1>
-
-    <div class="button-container">
-        <a href="laptop.html" class="menu-btn">
-            <span class="btn-icon">💻</span>
-            <span class="btn-title">Student Version</span>
-            <span class="btn-desc">Best for individual devices (Laptops, Tablets).</span>
-        </a>
-
-        <a href="projector.html" class="menu-btn">
-            <span class="btn-icon">📽️</span>
-            <span class="btn-title">Projector</span>
-            <span class="btn-desc">Includes zoom tools for big screens.</span>
-        </a>
+    <div id="landing-page">
+        <div class="menu-title">🚀 STORY GENERATOR 3000 🚀</div>
+        <div class="menu-btn-container">
+            <div class="menu-choice" onclick="startApp('student')">
+                <div style="font-size:50px; margin-bottom:10px;">💻</div>
+                <div style="font-size:20px; font-weight:bold; color:#ffd700;">Student Version</div>
+                <div style="font-size:12px; margin-top:5px; color:#aaa;">Laptop friendly. Includes History Log.</div>
+            </div>
+            <div class="menu-choice" onclick="startApp('projector')">
+                <div style="font-size:50px; margin-bottom:10px;">📽️</div>
+                <div style="font-size:20px; font-weight:bold; color:#ffd700;">Projector Version</div>
+                <div style="font-size:12px; margin-top:5px; color:#aaa;">Zoom controls. No Log. Big Text.</div>
+            </div>
+        </div>
+        <div style="margin-top:50px; color:#555;">© 2025 Ink and Interface</div>
     </div>
 
-    <footer>© 2025 Paper & Pixels</footer>
+    <div id="app-container">
+        
+        <div id="soundToggle" onclick="toggleSound()">🔊</div>
+        
+        <div id="zoomControls">
+            <button class="zoom-btn" onclick="changeZoom(-0.1)">-</button>
+            <span style="color:white; font-size:12px; font-weight:bold;">ZOOM</span>
+            <button class="zoom-btn" onclick="changeZoom(0.1)">+</button>
+        </div>
 
+        <div class="timer-container">
+            <input type="number" id="timeInput" class="timer-input" placeholder="Min" min="1" max="60">
+            <button class="timer-btn" onclick="startTimer()">START</button>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+        </div>
+
+        <h1>🚀 STORY GENERATOR 3000 🚀</h1>
+        <div class="click-hint">Tip: Click the pencil to choose specific items!</div>
+        
+        <div class="slot-machine-frame" id="machineFrame">
+            
+            <div class="sticker" id="sticker-tl"></div>
+            <div class="sticker" id="sticker-tr"></div>
+            <div class="sticker" id="sticker-bl"></div>
+            <div class="sticker" id="sticker-br"></div>
+
+            <div class="machine-container">
+                <div class="machine-row">
+                    <div class="reel-wrapper">
+                        <div class="reel-label">GENRE</div>
+                        <div class="edit-icon" onclick="openEditor('genre', 1)">✏️</div>
+                        <div class="reel" id="genre1" onclick="spinGenre(1)"><div class="text">Fantasy</div></div>
+                    </div>
+                    <div class="reel-wrapper">
+                        <div class="reel-label">CHARACTER</div>
+                        <div class="edit-icon" onclick="openEditor('character', 1)">✏️</div>
+                        <div class="reel" id="character1" onclick="spinIndividual('character1')"><div class="text">Harry Potter</div></div>
+                    </div>
+                    <div class="reel-wrapper">
+                        <div class="reel-label">PLOT</div>
+                        <div class="edit-icon" onclick="openEditor('plot', 1)">✏️</div>
+                        <div class="reel" id="plot1" onclick="spinIndividual('plot1')"><div class="text">Loses a wand</div></div>
+                    </div>
+                    <div class="reel-wrapper">
+                        <div class="reel-label">SETTING</div>
+                        <div class="edit-icon" onclick="openEditor('setting', 1)">✏️</div>
+                        <div class="reel" id="setting1" onclick="spinIndividual('setting1')"><div class="text">At Hogwarts</div></div>
+                    </div>
+                    <button class="save-btn" onclick="saveIdea(1)">SAVE</button>
+                </div>
+                
+                <div class="or-text">OR</div>
+                
+                <div class="machine-row">
+                    <div class="reel-wrapper">
+                        <div class="reel-label">GENRE</div>
+                        <div class="edit-icon" onclick="openEditor('genre', 2)">✏️</div>
+                        <div class="reel" id="genre2" onclick="spinGenre(2)"><div class="text">Sci-Fi</div></div>
+                    </div>
+                    <div class="reel-wrapper">
+                        <div class="reel-label">CHARACTER</div>
+                        <div class="edit-icon" onclick="openEditor('character', 2)">✏️</div>
+                        <div class="reel" id="character2" onclick="spinIndividual('character2')"><div class="text">Baby Yoda</div></div>
+                    </div>
+                    <div class="reel-wrapper">
+                        <div class="reel-label">PLOT</div>
+                        <div class="edit-icon" onclick="openEditor('plot', 2)">✏️</div>
+                        <div class="reel" id="plot2" onclick="spinIndividual('plot2')"><div class="text">Fixes a ship</div></div>
+                    </div>
+                    <div class="reel-wrapper">
+                        <div class="reel-label">SETTING</div>
+                        <div class="edit-icon" onclick="openEditor('setting', 2)">✏️</div>
+                        <div class="reel" id="setting2" onclick="spinIndividual('setting2')"><div class="text">On the Death Star</div></div>
+                    </div>
+                    <button class="save-btn" onclick="saveIdea(2)">SAVE</button>
+                </div>
+            </div>
+
+            <button class="spin-btn" onclick="spin()">SPIN ALL</button>
+            <div id="jackpotMessage"></div>
+        </div>
+
+        <div class="saved-wrapper">
+            <div class="saved-header">
+                <span style="margin-left:10px;">📝 Idea Log</span>
+                <button class="clear-btn" onclick="document.getElementById('savedIdeas').innerHTML=''" style="margin-right:10px; background:#333; color:white; border:1px solid #fff; cursor:pointer;">Clear List</button>
+            </div>
+            <div class="saved-ideas" id="savedIdeas"></div>
+            <div class="copyright">© 2025 Ink and Interface</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <h2 class="modal-title">CUSTOM CHOICE</h2>
+            
+            <label class="modal-label">Choose from the list:</label>
+            <select id="editSelect" class="modal-select" onchange="document.getElementById('editInput').value = this.value">
+                <option value="">-- Select --</option>
+            </select>
+            
+            <label class="modal-label">Or type your own:</label>
+            <input type="text" id="editInput" class="modal-input" placeholder="Type here...">
+            
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn btn-confirm" onclick="applyEdit()">Confirm & Lock</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- COMPLETE ORIGINAL DATASET ---
+        const weirdSettings = ["On the Moon", "In a Haunted House", "At the Super Bowl", "Inside a Volcano", "In a Time Machine", "Under the Bed", "Inside a whale", "At a clown college"];
+        const universalPlots = ["Gets stuck in an elevator", "Accidentally becomes famous", "Loses their pants", "Must sing in a talent show", "Finds a winning lottery ticket", "Is chased by a goose", "Forgets their own name", "Tries to cook dinner", "Adopts a stray cat", "Breaks a world record", "Gets a terrible haircut"];
+
+        const genreMap = {
+            "Fantasy": {
+                chars: ["Harry Potter", "Shrek", "A Breathless Dragon", "King Arthur", "Elsa", "A Minion Wizard", "Gandalf", "The Tooth Fairy", "A Minecraft Steve", "An Angry Unicorn", "Gandalf in Short Shorts", "A Dragon in a Tuxedo", "A Magical Talking Tree", "A Goblin Banker", "A Mermaid with Legs", "A Centaur", "A Griffin", "A Stone Golem", "Percy Jackson", "A Hobbit", "A Wizard who forgot magic", "A Fairy with no wings", "Thor"],
+                plots: ["Must find a Golden Toilet", "Has to baby-sit a dragon", "Accidentally deletes the world", "Loses their magic powers", "Gets turned into a llama", "Must steal a magical ring", "Tries to order Pizza", "Gets stuck in a video game", "Falls off a broomstick", "Must wake a sleeping giant", "Duels a wizard", "Finds a cursed sword", "Befriends a ghost"],
+                settings: ["In a castle", "In a magical forest", "Inside a giant's pocket", "On a cloud made of candy", "In a library of flying books", "Under a bridge", "Inside a dragon's cave", "At a medieval McDonald's", "In a crystal cavern", "On a floating island", "In a dungeon", "In Narnia", "At the Shire"]
+            },
+            "Fairy Tale": {
+                chars: ["A Prince", "A Wicked Witch", "A Talking Frog", "Cinderella", "Puss in Boots", "A Fairy Godmother", "A Big Bad Wolf", "A Sleepy Knight", "Cinderella in Sweatpants", "A Wolf in a Tutu", "The Gingerbread Man", "Goldilocks", "Pinocchio", "Little Red Riding Hood", "Sleeping Beauty", "Rumpelstiltskin", "Hansel & Gretel", "The Pied Piper", "Rapunzel", "Snow White", "Jack (and the Beanstalk)", "The Three Pigs"],
+                plots: ["Loses a glass slipper", "Wakes up from a 100-year nap", "Climbs a giant beanstalk", "Gets lost in the woods", "Tricks a troll", "Can't find their horse", "Accidentally kisses a frog", "Must spin straw into gold", "Gets locked in a tower", "Bakes a magic pie", "Outsmarts a fox", "Blows a house down"],
+                settings: ["In a gingerbread house", "In a tower with no door", "In an enchanted pumpkin patch", "At a royal ball", "In a house made of straw", "In a shoe (where an old lady lives)", "In a deep dark well", "At a wishing well", "In a cottage", "Under a bridge", "In a candy forest"]
+            },
+            "Sci-Fi": {
+                chars: ["Baby Yoda", "Iron Man", "Wall-E", "A Martian", "Darth Vader", "A Cyborg Teacher", "Buzz Lightyear", "A Glittery Alien", "Mega Man", "A Time Traveler", "Darth Vader in a Hawaiian Shirt", "A Robot with a Cold", "An Astronaut Afraid of Heights", "A Space Pirate", "A Talking Computer", "Luke Skywalker", "E.T.", "A Transformer", "A Clone Trooper", "Thanos", "Groot"],
+                plots: ["Must fix a spaceship", "Crash lands an escape pod", "Travels to the year 3000", "Fights a robot army", "Discovers pizza on Mars", "Swaps brains with a chicken", "Accidentally deletes history", "Meets their future self", "Finds a button they shouldn't press", "Learns to be human", "Escapes a black hole"],
+                settings: ["On the Death Star", "In a city where gravity floats", "Inside a robot's stomach", "On a planet made of glass", "In a spaceship", "In a secret lab", "On the Moon", "Inside a black hole", "In a holographic room", "On a colony on Mars"]
+            },
+            "Mystery": {
+                chars: ["A Detective", "A Student Journalist", "A Nosy Neighbor", "A Spy", "Scooby Doo", "Sherlock Holmes", "A Police Officer", "The Principal", "Sherlock in Pajamas", "A Detective who is a Dog", "Nancy Drew", "A Suspicious Butler", "A Forensic Scientist", "Inspector Gadget", "Encyclopedia Brown", "The Hardy Boys", "Velma", "A Meddling Kid"],
+                plots: ["Solves a missing lunch mystery", "Finds a secret map", "Tracks a thief", "Discovers a hidden tunnel", "Finds a clue in a locker", "Witnesses a crime", "Investigates stolen test answers", "Finds a footprint on the ceiling", "Cracks a secret code", "Finds a fake painting", "Clears their name", "Unmasks a villain"],
+                settings: ["In a dark alley", "At a museum", "In a library", "In an abandoned house", "At school at night", "On a foggy street", "In a misty graveyard", "Inside a locked vault", "At an antique shop", "In a dusty attic", "On the Orient Express", "At a crime scene"]
+            },
+            "Comedy": {
+                chars: ["Peppa Pig", "SpongeBob", "The Lunch Lady", "A Grumpy Cat", "A Clown", "A Chicken", "The Principal", "A Minion", "The Class Clown", "A Mime who talks too much", "A Baby Boss", "A Cat in a Hat", "A Dad with Bad Jokes", "Mr. Bean", "A Llama", "A Sloth", "A Penguin"],
+                plots: ["Goes viral online", "Gets locked out of their house", "Loses their pants", "Must eat 50 hot dogs", "Accidentally becomes President", "Breaks a world record", "Accidentally pulls the fire alarm", "Gets detention for no reason", "Slips on a banana peel", "Tries to wash a cat", "Destroys a wedding cake", "Gets glue on their hands"],
+                settings: ["At a circus", "In a cafeteria", "At a birthday party", "In a bouncy castle", "At the zoo", "In a supermarket", "In a bathroom stall", "In a car wash", "At a pie eating contest", "In a clown car", "In a vending machine", "At a water park"]
+            },
+            "Adventure": {
+                chars: ["Batman", "Spiderman", "Wonder Woman", "Sonic the Hedgehog", "Mario", "Captain Underpants", "A Secret Agent", "Black Panther", "Indiana Jones", "A Survivor", "Batman Wearing Crocs", "A Pirate with Two Eye Patches", "Lara Croft", "Moana", "Robin Hood", "Tarzan", "A Ninja", "Link (Zelda)", "A Mountain Climber", "A Deep Sea Diver", "A Treasure Hunter", "A Park Ranger", "A Lost Tourist", "The Rock"],
+                plots: ["Must save the City", "Defuses a stink bomb", "Escapes a creeper explosion", "Races against a cheetah", "Steals a secret formula", "Fights a super-villain", "Finds fresh water", "Survives a tornado", "Climbs the highest mountain", "Finds a lost city", "Crosses a lava river", "Jumps from a plane"],
+                settings: ["In a volcano", "On a deserted island", "In a hidden temple", "On a sinking ship", "In a jungle", "On top of a speeding train", "In a cavern", "Under a waterfall", "In a shark tank", "In a dense forest", "In the Sahara Desert", "On Mount Everest"]
+            },
+            "Spy": {
+                chars: ["A Secret Agent", "A Double Agent", "A Master of Disguise", "A Hacker", "A Gadget Expert", "A Student Spy", "A Teacher Undercover", "Black Widow", "James Bond in Gym Clothes", "A Villain with a Cat", "A Cryptographer", "An Agent with Amnesia", "Kim Possible", "Agent Cody Banks", "Spy Kids"],
+                plots: ["Steals a secret chip", "Hacks a mainframe", "Escapes a laser trap", "Goes undercover", "Diffuses a bomb", "Intercepts a message", "Wears a disguise", "Jumps out of a plane", "Swaps briefcases", "Uses a laser watch", "Climbs a skyscraper", "Disables a camera"],
+                settings: ["In a villain's lair", "Inside a bank vault", "In a ventilation shaft", "At a fancy tuxedo party", "On a submarine", "In an elevator shaft", "In a high-tech van", "At a casino", "In a satellite control room", "On a stealth jet", "In an underground bunker", "In a Laser Hallway"]
+            },
+            "Western": {
+                chars: ["A Sheriff", "A Bandit", "A Cowboy", "A Gold Miner", "A Rancher", "A Bounty Hunter", "A Saloon Owner", "A Sheriff riding an Ostrich", "A Cowboy who hates horses", "The Lone Ranger", "A Horse that Talks", "A Pianist", "Annie Oakley", "Billy the Kid", "A Prospector", "A Rodeo Clown"],
+                plots: ["Must catch a train", "Finds a map to gold", "Duels at high noon", "Loses their hat", "Tames a wild bull", "Protects the town bank", "Chases a bandit", "Wins a poker game", "Finds water in the desert", "Defends the stagecoach", "Discovers oil", "Sleeps under the stars"],
+                settings: ["In a dusty saloon", "In a ghost town", "In a canyon of echoes", "At a rodeo for chickens", "On a steam train", "In a gold mine", "At the O.K. Corral", "Around a campfire", "In a dry riverbed", "On a ranch", "In a jail cell", "At a watering hole"]
+            },
+            "Scary": {
+                chars: ["A Vampire", "A Ghost", "A Zombie", "Wednesday Addams", "A Skeleton", "A Cursed Doll", "A Werewolf", "A Werewolf in a Dress", "The Grim Reaper", "A Headless Horseman", "A Clown with Sharp Teeth", "A Mummy", "A Swamp Monster", "Frankenstein's Monster", "Dracula", "Slender Man", "A Creepy Puppet", "A Ghostbuster"],
+                plots: ["Is chased by a shadow", "Hears strange noises", "Falls into a deep hole", "Finds a haunted book", "Escapes a monster", "Sees a ghost", "Turns into a bat", "Finds a skeleton in the closet", "The lights go out", "Receives a creepy phone call", "A doll blinks at them", "Hears footsteps upstairs"],
+                settings: ["In a haunted mansion", "In a graveyard", "In a dark basement", "In a misty swamp", "In an old attic", "In a mirror maze", "Under the bed", "In an abandoned hospital", "In a cornfield at night", "In a spooky forest", "In a crypt", "In a fog"]
+            },
+            "Romance": {
+                chars: ["A Pop Star", "A Football Player", "Barbie", "Ken", "A Vampire", "A Werewolf", "Mario", "Peach", "A Student", "A Secret Crush", "Spider-Man", "A Mermaid", "A Librarian", "Taylor Swift", "Travis Kelce", "Ariana Grande", "A Prince", "A Baker", "A Neighbor", "Romeo", "Juliet", "Beyoncé"],
+                plots: ["Tries to ask them to Prom", "Writes a bad love song", "Gets stuck on a ferris wheel", "Accidentally texts the wrong person", "Shares a milkshake", "Goes on a terrible date", "Writes a secret note", "Gets caught in the rain", "Accidentally holds hands", "Buys the wrong gift", "Shares an umbrella"],
+                settings: ["At a Valentine's dance", "In a field of flowers", "At the movies", "At a coffee shop", "On a romantic picnic", "At a concert", "In the rain", "At a wedding", "On a park bench", "At a sunset beach", "Under the bleachers", "At a skating rink"]
+            },
+            "Historical": {
+                chars: ["Abraham Lincoln", "Albert Einstein", "Cleopatra", "Amelia Earhart", "William Shakespeare", "A Medieval Knight", "A Viking Warrior", "George Washington", "Lincoln with a green beard", "Einstein with a mohawk", "A Samurai", "A Gladiator", "A Caveman", "Leonardo da Vinci", "Queen Elizabeth", "Napoleon", "Rosa Parks", "Mozart", "Neil Armstrong", "Julius Caesar"],
+                plots: ["Discovers a new continent", "Invents a lightbulb", "Writes a famous play", "Builds a pyramid", "Signs a peace treaty", "Crosses an ocean", "Paints a masterpiece", "Invents Pizza", "Fights a dragon", "Discovers fire", "Survives the plague", "Writes a scroll"],
+                settings: ["In Ancient Rome", "Inside a pyramid", "On the Mayflower", "In a medieval castle", "On a Viking longship", "In a royal court", "In a gladiator arena", "On the Titanic", "In a trench", "In a prehistoric cave", "On the Silk Road", "At the first Thanksgiving"]
+            },
+            "Sports": {
+                chars: ["A Star Quarterback", "A Pro Baseball Pitcher", "A Goalie", "A Tennis Champion", "The Referee", "A Team Mascot", "A Benchwarmer", "A Wrestling Champ", "A Referee who is Blind", "A Mascot who can't see", "Serena Williams", "LeBron James", "A Skateboarder", "Lionel Messi", "Tiger Woods", "A Gymnast", "Michael Jordan", "Steph Curry", "A Coach", "A Commentator"],
+                plots: ["Must win the World Series", "Scores a winning touchdown", "Gets a red card", "Strikes out the side", "Makes a buzzer-beater shot", "Forgets their uniform", "Wins a Gold Medal", "Loses the game ball", "Misses the penalty kick", "Learns a new trick", "Gets traded to a rival team", "Hits a home run"],
+                settings: ["On a field made of ice", "At the World Cup", "In a stadium with no lights", "In a locker room", "At the Olympics", "On a tennis court", "In a wrestling ring", "At a skate park", "On a golf course", "At a swimming pool", "On a ski slope"]
+            }
+        };
+
+        // Inject Universal Plots/Settings
+        Object.keys(genreMap).forEach(k => {
+            genreMap[k].settings.push(...weirdSettings);
+            genreMap[k].plots.push(...universalPlots);
+        });
+        const genres = Object.keys(genreMap);
+
+        // State
+        let finalResults = { 
+            1: { genre: "Fantasy", character: "--", plot: "--", setting: "--" }, 
+            2: { genre: "Sci-Fi", character: "--", plot: "--", setting: "--" } 
+        };
+        let lockedStatus = {
+            1: { genre: false, character: false, plot: false, setting: false },
+            2: { genre: false, character: false, plot: false, setting: false }
+        };
+        let isMuted = false;
+        let audioCtx;
+        let currentZoom = 1;
+
+        // --- NAVIGATION ---
+        function startApp(mode) {
+            initAudio(); // Initialize audio context on first click
+            document.getElementById('landing-page').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            document.body.className = mode + '-mode';
+            
+            if(mode === 'projector') {
+                currentZoom = 1.3;
+                updateZoom();
+            }
+        }
+
+        // --- ZOOM (Projector) ---
+        function changeZoom(delta) {
+            currentZoom += delta;
+            if(currentZoom < 0.5) currentZoom = 0.5;
+            if(currentZoom > 2.0) currentZoom = 2.0;
+            updateZoom();
+        }
+        function updateZoom() {
+            const frame = document.getElementById('machineFrame');
+            frame.style.transform = `scale(${currentZoom})`;
+            frame.style.marginTop = `${(currentZoom * 40)}px`;
+        }
+
+        // --- SPIN LOGIC ---
+        function spin() {
+            document.getElementById('jackpotMessage').innerHTML = '';
+            spinRow(1);
+            setTimeout(() => spinRow(2), 600);
+        }
+
+        function spinRow(row) {
+            if(!lockedStatus[row].genre) {
+                const newGenre = getRand(genres);
+                finalResults[row].genre = newGenre;
+                animateReel('genre'+row, newGenre);
+            }
+
+            setTimeout(() => {
+                const g = finalResults[row].genre;
+                const data = genreMap[g] || genreMap['Fantasy'];
+                
+                if(!lockedStatus[row].character) animateReel('character'+row, getRand(data.chars));
+                if(!lockedStatus[row].plot) animateReel('plot'+row, getRand(data.plots));
+                if(!lockedStatus[row].setting) animateReel('setting'+row, getRand(data.settings));
+                
+                if(row === 2) checkJackpot();
+            }, 200);
+        }
+
+        function spinGenre(row) {
+            if(lockedStatus[row].genre) return;
+            spinRow(row); 
+        }
+
+        function spinIndividual(id) {
+            const row = id.slice(-1);
+            const type = id.replace(row, '');
+            if(lockedStatus[row][type]) return;
+
+            const g = finalResults[row].genre;
+            const data = genreMap[g] || genreMap['Fantasy'];
+            let pool = (type === 'character') ? data.chars : (type === 'plot') ? data.plots : data.settings;
+            
+            animateReel(id, getRand(pool));
+        }
+
+        function animateReel(id, text) {
+            const el = document.getElementById(id);
+            el.classList.add('spinning');
+            const row = id.slice(-1);
+            const type = id.replace(row, '');
+            finalResults[row][type] = text;
+
+            // Flash visual + Audio tick
+            let ticks = 0;
+            const tickInterval = setInterval(() => {
+                if(Math.random() > 0.6) playTick();
+                ticks++;
+            }, 80);
+
+            setTimeout(() => {
+                clearInterval(tickInterval);
+                el.classList.remove('spinning');
+                el.querySelector('.text').innerText = text;
+                // Specific genre sound on setting lock
+                if(type === 'setting') playGenreSound(finalResults[row].genre);
+                else playLockSound();
+            }, 500 + Math.random() * 400);
+        }
+
+        function getRand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        // --- EDITING ---
+        let editTarget = { row: 1, type: '' };
+
+        function openEditor(type, row) {
+            editTarget = { row, type };
+            document.getElementById('editModal').style.display = 'flex';
+            document.getElementById('editInput').value = '';
+            
+            const select = document.getElementById('editSelect');
+            select.innerHTML = '<option value="">-- Pick from List --</option>';
+            
+            let options = [];
+            if(type === 'genre') options = genres;
+            else {
+                const g = finalResults[row].genre;
+                const data = genreMap[g] || genreMap['Fantasy'];
+                if(type === 'character') options = data.chars;
+                if(type === 'plot') options = data.plots;
+                if(type === 'setting') options = data.settings;
+            }
+            
+            options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt; o.innerText = opt;
+                select.appendChild(o);
+            });
+        }
+
+        function applyEdit() {
+            const val = document.getElementById('editInput').value;
+            if(val) {
+                const id = editTarget.type + editTarget.row;
+                document.getElementById(id).querySelector('.text').innerText = val;
+                document.getElementById(id).classList.add('locked');
+                lockedStatus[editTarget.row][editTarget.type] = true;
+                finalResults[editTarget.row][editTarget.type] = val;
+                if(editTarget.type === 'genre' && genreMap[val]) {
+                    finalResults[editTarget.row].genre = val;
+                }
+                playLockSound();
+            }
+            closeModal();
+        }
+
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+        // --- UTILS ---
+        function saveIdea(row) {
+            const d = finalResults[row];
+            const html = `<div style="border-bottom:1px dashed #ccc; padding:10px;">
+                <strong style="color:#e94560">${d.genre}:</strong> ${d.character} ${d.plot} ${d.setting}.</div>`;
+            const box = document.getElementById('savedIdeas');
+            box.innerHTML = html + box.innerHTML;
+        }
+
+        function checkJackpot() {
+            if(finalResults[1].genre === finalResults[2].genre) {
+                document.getElementById('jackpotMessage').innerText = "✨ MATCHING GENRE BONUS! ✨";
+                playGenreSound(finalResults[1].genre); // Double sound for bonus
+            }
+        }
+
+        // --- AUDIO ENGINE (EXACT MATCH) ---
+        function initAudio() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended' && !isMuted) audioCtx.resume();
+            } catch(e) {}
+        }
+        
+        function playTick() {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle'; osc.frequency.value = 200; 
+                gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); 
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } catch(e) {}
+        }
+
+        function playLockSound() {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); 
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } catch(e) {}
+        }
+
+        function playGenreSound(genre) {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                let type = 'triangle'; let notes = [523, 659, 783]; 
+                if(genre === "Sci-Fi") { type='sawtooth'; notes=[800, 600, 400]; } 
+                else if(genre === "Western") { type='square'; notes=[200, 300, 400]; }
+                else if(genre === "Scary" || genre === "Mystery") { type='sawtooth'; notes=[100, 110, 100]; }
+                else if(genre === "Sports") { type='square'; notes=[1800, 1500, 1800, 1500, 1800]; } 
+                else if(genre === "Romance") { type='sine'; notes=[500, 600, 800]; }
+
+                notes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type; osc.frequency.value = freq;
+                    if(genre === "Sci-Fi") osc.frequency.exponentialRampToValueAtTime(freq*2, now + 0.3);
+                    const start = now + (i * 0.1);
+                    gain.gain.setValueAtTime(0.1, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(start); osc.stop(start + 0.8);
+                });
+            } catch(e) {}
+        }
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            document.getElementById('soundToggle').innerText = isMuted ? "🔇" : "🔊";
+            document.getElementById('soundToggle').style.opacity = isMuted ? "0.5" : "1";
+        }
+
+        let tInt;
+        function startTimer() {
+            let m = parseInt(document.getElementById('timeInput').value) || 5;
+            let s = m * 60;
+            if(tInt) clearInterval(tInt);
+            tInt = setInterval(() => {
+                s--;
+                let mn = Math.floor(s/60);
+                let sc = s%60;
+                document.getElementById('timerDisplay').innerText = `${mn}:${sc<10?'0'+sc:sc}`;
+                if(s<=0) clearInterval(tInt);
+            }, 1000);
+        }
+
+    </script>
 </body>
 </html>
